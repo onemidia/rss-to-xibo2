@@ -14,28 +14,31 @@ const convertRssToXibo = async (rssUrl) => {
     const result = await parser.parseStringPromise(rssData);
 
     // Criar o novo XML no formato adequado para o Xibo
-    const builder = new xml2js.Builder();
+    const builder = new xml2js.Builder({ headless: true, cdata: true });
     const xml = builder.buildObject({
       rss: {
         $: { version: '2.0' },
         channel: {
-          title: '<![CDATA[Tribuna Online]]>',
+          title: 'Tribuna Online',
           link: 'https://www.tribunaonline.net/feed/',
-          description: '<![CDATA[Últimas notícias do Tribuna Online]]>',
+          description: 'Últimas notícias do Tribuna Online',
           item: result.rss.channel[0].item.map(item => {
             // Extrair a URL da imagem do description
             const description = item.description[0];
             const imageUrl = description.match(/<img.*?src=["'](.*?)["']/);
             const linkfoto = imageUrl ? imageUrl[1] : ''; // Extrair a URL da imagem, caso exista
 
-            // Formatar o conteúdo para Xibo
+            // Formatar corretamente os dados para compatibilidade com Xibo
             return {
-              title: `<![CDATA[${item.title[0]}]]>`,
+              title: item.title[0], // Sem CDATA para evitar exibição errada
               link: item.link[0],
-              description: `<![CDATA[${item.description[0].replace(/<img[^>]*>/g, '')}]]>`, // Remover a imagem do description e incluir CDATA
-              pubDate: `<![CDATA[${item.pubDate[0]}]]>`,
-              // Formatar linkfoto dentro do layout HTML com CDATA
-              linkfoto: `<![CDATA[<div class="image">[linkfoto|image]<div class="cycle-overlay"><img alt="" src="${linkfoto}" style="width: 200px; height: 200px; margin-top: 200px;" /><p style="font-family: Arial, Verdana, sans-serif; font-size:60px; color:#ffffff;"><span style="color:#ffcc00;"><strong>[Title]</strong></span></p><p style="font-family: Arial, Verdana, sans-serif; font-size:50px; color:#ffffff;">[Description]</p></div></div>]]>`
+              description: item.description[0].replace(/<img[^>]*>/g, ''), // Remove imagem embutida
+              pubDate: item.pubDate[0],
+              // Apenas o linkfoto mantém CDATA para preservar o HTML dentro do Xibo
+              Content: {
+                _: `<div class="image">[linkfoto|image]<div class="cycle-overlay"><img alt="" src="${linkfoto}" style="width: 200px; height: 200px; margin-top: 200px;" /><p style="font-family: Arial, Verdana, sans-serif; font-size:60px; color:#ffffff;"><span style="color:#ffcc00;"><strong>[Title]</strong></span></p><p style="font-family: Arial, Verdana, sans-serif; font-size:50px; color:#ffffff;">[Description]</p></div></div>`,
+                $: { type: "html" }
+              }
             };
           })
         }
