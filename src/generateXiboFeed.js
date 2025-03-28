@@ -14,29 +14,27 @@ const convertRssToXibo = async (rssUrl) => {
     const result = await parser.parseStringPromise(rssData);
 
     // Criar o novo XML no formato adequado para o Xibo
-    const builder = new xml2js.Builder({ headless: true, cdata: true });
+    const builder = new xml2js.Builder({ cdata: true });
     const xml = builder.buildObject({
       rss: {
         $: { version: '2.0' },
         channel: {
-          title: 'Tribuna Online',
-          link: 'https://www.tribunaonline.net/feed/',
-          description: 'Últimas notícias do Tribuna Online',
+          title: result.rss.channel[0].title[0],
+          link: result.rss.channel[0].link[0],
+          description: result.rss.channel[0].description[0],
           item: result.rss.channel[0].item.map(item => {
             // Extrair a URL da imagem do description
             const description = item.description[0];
-            const imageUrl = description.match(/<img.*?src=["'](.*?)["']/);
-            const linkfoto = imageUrl ? imageUrl[1] : ''; // Extrair a URL da imagem, caso exista
+            const imageUrlMatch = description.match(/<img.*?src=["'](.*?)["']/);
+            const imageUrl = imageUrlMatch ? imageUrlMatch[1] : '';
 
-            // Formatar corretamente os dados para compatibilidade com Xibo
+            // Remover a tag <img> do description
+            const cleanDescription = description.replace(/<img[^>]*>/g, '').trim();
+
             return {
-              title: item.title[0], 
-              description: item.description[0].replace(/<img[^>]*>/g, ''), // Remove imagem embutida
-              date: item.pubDate ? item.pubDate[0] : '', // Substituído pubDate por date
-              Content: {
-                _: `<div class="image">[linkfoto|image]<div class="cycle-overlay"><img alt="" src="${linkfoto}" style="width: 200px; height: 200px; margin-top: 200px;" /><p style="font-family: Arial, Verdana, sans-serif; font-size:60px; color:#ffffff;"><span style="color:#ffcc00;"><strong>${item.title[0]}</strong></span></p><p style="font-family: Arial, Verdana, sans-serif; font-size:50px; color:#ffffff;">${item.description[0]}</p></div></div>`,
-                $: { type: "html" }
-              }
+              title: item.title[0],
+              description: cleanDescription,
+              linkfoto: imageUrl
             };
           })
         }
