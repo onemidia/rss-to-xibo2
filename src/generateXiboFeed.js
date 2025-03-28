@@ -14,27 +14,29 @@ const convertRssToXibo = async (rssUrl) => {
     const result = await parser.parseStringPromise(rssData);
 
     // Criar o novo XML no formato adequado para o Xibo
-    const builder = new xml2js.Builder({ cdata: true });
+    const builder = new xml2js.Builder({ headless: true, cdata: true });
     const xml = builder.buildObject({
       rss: {
         $: { version: '2.0' },
         channel: {
-          title: result.rss.channel[0].title[0],
-          link: result.rss.channel[0].link[0],
-          description: result.rss.channel[0].description[0],
+          title: 'Tribuna Online',
+          link: 'https://www.tribunaonline.net/feed/',
+          description: 'Últimas notícias do Tribuna Online',
           item: result.rss.channel[0].item.map(item => {
             // Extrair a URL da imagem do description
             const description = item.description[0];
-            const imageUrlMatch = description.match(/<img.*?src=["'](.*?)["']/);
-            const imageUrl = imageUrlMatch ? imageUrlMatch[1] : '';
+            const imageUrl = description.match(/<img.*?src=["'](.*?)["']/);
+            const linkfoto = imageUrl ? imageUrl[1] : ''; // Extrair a URL da imagem, caso exista
 
-            // Remover a tag <img> do description
-            const cleanDescription = description.replace(/<img[^>]*>/g, '').trim();
-
+            // Formatar corretamente os dados para compatibilidade com Xibo
             return {
-              title: item.title[0],
-              description: cleanDescription,
-              linkfoto: imageUrl
+              title: item.title[0], // Sem CDATA para evitar exibição errada
+              link: item.link[0],
+              description: item.description[0].replace(/<img[^>]*>/g, ''), // Remove imagem embutida
+              Content: {
+                _: `<div class="image">[Link|image]<div class="cycle-overlay background"><div class="title">[Title]</div><div class="description">[Description]</div></div></div>`,
+                $: { type: "html" }
+              }
             };
           })
         }
