@@ -28,15 +28,15 @@ const convertRssToXibo = async (rssUrl) => {
             const imageUrl = description.match(/<img.*?src=["'](.*?)["']/);
             const linkfoto = imageUrl ? imageUrl[1] : ''; // Extrair a URL da imagem, caso exista
 
-            // Formatar corretamente os dados para compatibilidade com Xibo
+            // Imprimir o link da foto para depuração
+            console.log('Imagem URL:', linkfoto);
+
+            // Retornar os dados no formato adequado para o Xibo, sem o HTML
             return {
-              title: item.title[0], // Sem CDATA para evitar exibição errada
-              link: item.link[0],
-              description: item.description[0].replace(/<img[^>]*>/g, ''), // Remove imagem embutida
-              Content: {
-                _: `<div class="image">[Link|image]<div class="cycle-overlay background"><div class="title">[Title]</div><div class="description">[Description]</div></div></div>`,
-                $: { type: "html" }
-              }
+              title: item.title[0], // Título da notícia
+              link: item.link[0], // Link da notícia
+              description: item.description[0].replace(/<img[^>]*>/g, ''), // Descrição sem a imagem
+              image: linkfoto // Apenas o link da imagem
             };
           })
         }
