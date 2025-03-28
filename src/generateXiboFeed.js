@@ -30,13 +30,11 @@ const convertRssToXibo = async (rssUrl) => {
 
             // Formatar corretamente os dados para compatibilidade com Xibo
             return {
-              title: item.title[0], // Sem CDATA para evitar exibição errada
-              link: item.link[0],
+              title: item.title[0], 
               description: item.description[0].replace(/<img[^>]*>/g, ''), // Remove imagem embutida
-              pubDate: item.pubDate[0],
-              // Apenas o linkfoto mantém CDATA para preservar o HTML dentro do Xibo
+              date: item.pubDate ? item.pubDate[0] : '', // Substituído pubDate por date
               Content: {
-                _: `<div class="image">[linkfoto|image]<div class="cycle-overlay"><img alt="" src="${linkfoto}" style="width: 200px; height: 200px; margin-top: 200px;" /><p style="font-family: Arial, Verdana, sans-serif; font-size:60px; color:#ffffff;"><span style="color:#ffcc00;"><strong>[Title]</strong></span></p><p style="font-family: Arial, Verdana, sans-serif; font-size:50px; color:#ffffff;">[Description]</p></div></div>`,
+                _: `<div class="image">[linkfoto|image]<div class="cycle-overlay"><img alt="" src="${linkfoto}" style="width: 200px; height: 200px; margin-top: 200px;" /><p style="font-family: Arial, Verdana, sans-serif; font-size:60px; color:#ffffff;"><span style="color:#ffcc00;"><strong>${item.title[0]}</strong></span></p><p style="font-family: Arial, Verdana, sans-serif; font-size:50px; color:#ffffff;">${item.description[0]}</p></div></div>`,
                 $: { type: "html" }
               }
             };
